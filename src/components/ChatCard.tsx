@@ -4,14 +4,16 @@ import { useChat } from "../hooks/useChat";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Send, Smile, Paperclip, MoreHorizontal, CheckCircle2, Search, X, MessageSquare, Calendar } from "lucide-react";
+import { Send, Smile, Paperclip, MoreHorizontal, CheckCircle2, Search, X, MessageSquare, Calendar, ArrowLeft } from "lucide-react";
 
 export default function ChatCard({
     currentUserId,
-    otherUserId
+    otherUserId,
+    onBack
 }: {
     currentUserId: Id<"users">;
     otherUserId: Id<"users">;
+    onBack: () => void;
 }) {
     const [content, setContent] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
@@ -77,15 +79,24 @@ export default function ChatCard({
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                                 <button
-                                    onClick={() => setIsSearching(true)}
-                                    className="p-2 text-gray-400 hover:text-primary hover:bg-gray-50 rounded-full transition-all"
+                                    onClick={onBack}
+                                    className="lg:hidden p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg -ml-2"
                                 >
-                                    <Search size={22} />
+                                    <ArrowLeft size={20} />
                                 </button>
-                                <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all">
-                                    <MoreHorizontal size={24} />
+                                <button
+                                    onClick={() => {
+                                        setIsSearching(!isSearching);
+                                        if (isSearching) setSearchQuery("");
+                                    }}
+                                    className={`p-2 rounded-lg transition-colors ${isSearching ? "text-primary bg-primary/5" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}
+                                >
+                                    {isSearching ? <X size={20} /> : <Search size={20} />}
+                                </button>
+                                <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                                    <MoreHorizontal size={20} />
                                 </button>
                             </div>
                         </>
