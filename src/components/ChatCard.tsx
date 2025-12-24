@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Send, Smile, Paperclip, MoreHorizontal, CheckCircle2, Search, X, MessageSquare, Calendar, ArrowLeft } from "lucide-react";
+import { formatRelativeTime } from "../utils/time";
 
 export default function ChatCard({
     currentUserId,
@@ -54,32 +55,36 @@ export default function ChatCard({
     };
 
     return (
-        <div className="flex-1 flex flex-col p-8 overflow-hidden items-center">
-            <div className="w-full max-w-4xl h-full bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 flex flex-col overflow-hidden border border-gray-100">
+        <div className="flex-1 flex flex-col p-8 lg:p-8 overflow-hidden items-center">
+            <div className="w-full max-w-4xl h-full bg-white lg:rounded-[2rem] shadow-xl shadow-gray-200/50 flex flex-col overflow-hidden border border-gray-100">
                 {/* Chat Header */}
-                <div className="px-8 py-5 border-b border-gray-100 bg-white flex items-center justify-between min-h-[90px]">
+                <div className="px-6 lg:px-8 py-5 border-b border-gray-100 bg-white flex items-center justify-between min-h-[90px]">
                     {!isSearching ? (
                         <>
                             <div className="flex items-center gap-4">
                                 <div className="relative">
-                                    <div className="w-14 h-14 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-xl text-gray-700">
+                                    <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-lg lg:text-xl text-gray-700">
                                         {otherUser?.name?.[0].toUpperCase() || "?"}
                                     </div>
                                     {otherUser?.online && (
                                         <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                                     )}
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                     <div className="flex items-center gap-1.5">
-                                        <h2 className="text-lg font-bold text-gray-900">{otherUser?.name || "Loading..."}</h2>
-                                        <CheckCircle2 size={16} className="text-blue-500 fill-blue-500/10" />
+                                        <h2 className="text-base lg:text-lg font-bold text-gray-900 truncate">{otherUser?.name || "Loading..."}</h2>
+                                        <CheckCircle2 size={16} className="text-blue-500 fill-blue-500/10 shrink-0" />
                                     </div>
-                                    <p className="text-sm text-gray-400">
-                                        {otherUser?.online ? "Online" : "Offline"} · Last seen 1 min ago
+                                    <p className="text-xs lg:text-sm text-gray-400">
+                                        {otherUser?.online ? (
+                                            <span className="text-emerald-500 font-medium">Online</span>
+                                        ) : (
+                                            <>Offline · Last seen {formatRelativeTime(otherUser?.lastSeen)}</>
+                                        )}
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1 lg:gap-3">
                                 <button
                                     onClick={onBack}
                                     className="lg:hidden p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg -ml-2"
@@ -95,7 +100,7 @@ export default function ChatCard({
                                 >
                                     {isSearching ? <X size={20} /> : <Search size={20} />}
                                 </button>
-                                <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                                <button className="hidden sm:block p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                                     <MoreHorizontal size={20} />
                                 </button>
                             </div>
@@ -137,7 +142,7 @@ export default function ChatCard({
                 {/* Messages Area / Search Results */}
                 <div
                     ref={scrollRef}
-                    className="flex-1 overflow-y-auto p-10 space-y-8 scroll-smooth"
+                    className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-6 lg:space-y-8 scroll-smooth"
                 >
                     {isSearching && searchQuery.length > 2 ? (
                         <div className="space-y-6">
@@ -199,11 +204,11 @@ export default function ChatCard({
                                     key={msg._id}
                                     className={`flex ${msg.senderId === currentUserId ? "justify-end" : "justify-start"}`}
                                 >
-                                    <div className={`group relative max-w-[75%] rounded-3xl px-6 py-4 shadow-sm transition-all hover:shadow-md ${msg.senderId === currentUserId
+                                    <div className={`group relative max-w-[85%] lg:max-w-[75%] rounded-2xl lg:rounded-3xl px-4 lg:px-6 py-3 lg:py-4 shadow-sm transition-all hover:shadow-md ${msg.senderId === currentUserId
                                         ? "bg-primary text-white rounded-tr-none"
                                         : "bg-gray-100 text-gray-800 rounded-tl-none"
                                         }`}>
-                                        <p className="text-base leading-relaxed">{msg.content}</p>
+                                        <p className="text-sm lg:text-base leading-relaxed">{msg.content}</p>
                                         <span className={`text-[10px] absolute -bottom-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${msg.senderId === currentUserId ? "right-0 text-primary" : "left-0 text-gray-400"
                                             }`}>
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -229,10 +234,10 @@ export default function ChatCard({
 
                 {/* Input Area */}
                 {!isSearching && (
-                    <div className="p-8 bg-white border-t border-gray-100 mt-auto">
+                    <div className="p-4 lg:p-8 bg-white border-t border-gray-100 mt-auto">
                         <form onSubmit={handleSend} className="relative group">
                             <div className="absolute left-4 inset-y-0 flex items-center gap-1">
-                                <button type="button" className="p-2 text-gray-400 hover:text-primary transition-colors">
+                                <button type="button" className="hidden sm:block p-2 text-gray-400 hover:text-primary transition-colors">
                                     <Smile size={22} />
                                 </button>
                                 <button type="button" className="p-2 text-gray-400 hover:text-primary transition-colors">
@@ -247,14 +252,14 @@ export default function ChatCard({
                                     handleKeyPress();
                                 }}
                                 placeholder="Type your message"
-                                className="w-full bg-gray-50 border-2 border-transparent rounded-[2rem] pl-28 pr-16 py-4 text-base text-gray-800 focus:outline-none focus:border-primary/20 focus:bg-white transition-all placeholder:text-gray-400"
+                                className="w-full bg-gray-50 border-2 border-transparent rounded-[2rem] pl-16 sm:pl-28 pr-16 py-3 lg:py-4 text-base text-gray-800 focus:outline-none focus:border-primary/20 focus:bg-white transition-all placeholder:text-gray-400"
                             />
                             <button
                                 type="submit"
                                 disabled={!content.trim() || !chatId}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-primary hover:bg-primary-hover disabled:bg-gray-200 text-white rounded-full flex items-center justify-center transition-all shadow-lg shadow-primary/20 active:scale-95"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 lg:w-12 lg:h-12 bg-primary hover:bg-primary-hover disabled:bg-gray-200 text-white rounded-full flex items-center justify-center transition-all shadow-lg shadow-primary/20 active:scale-95"
                             >
-                                <Send size={22} className="relative left-0.5" />
+                                <Send size={20} className="relative left-0.5 lg:w-[22px] lg:h-[22px]" />
                             </button>
                         </form>
                     </div>

@@ -2,6 +2,7 @@ import { Search, X } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAllUsers } from "../hooks/useUsers";
 import type { Id } from "../../convex/_generated/dataModel";
+import { formatRelativeTime } from "../utils/time";
 
 export default function ThreadList({
     currentUserId,
@@ -108,7 +109,11 @@ export default function ThreadList({
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm text-gray-400 truncate pr-2">
-                                        {user.online ? "Available for chat" : "Last seen recently"}
+                                        {user.online ? (
+                                            <span className="text-emerald-500 font-medium">Available for chat</span>
+                                        ) : (
+                                            `Last seen ${formatRelativeTime(user.lastSeen)}`
+                                        )}
                                     </p>
                                     {!user.online && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>}
                                 </div>
