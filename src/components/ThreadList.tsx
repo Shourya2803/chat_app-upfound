@@ -130,7 +130,9 @@ export default function ThreadList({
                             onClick={() => onSelectUser(user._id)}
                             className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 group cursor-pointer ${selectedUserId === user._id
                                 ? "bg-[#FDF6F0] shadow-sm"
-                                : "hover:bg-gray-50"
+                                : user.unreadCount > 0
+                                    ? "bg-primary/5 hover:bg-primary/10"
+                                    : "hover:bg-gray-50"
                                 }`}
                             role="button"
                             tabIndex={0}
@@ -157,17 +159,32 @@ export default function ThreadList({
 
                             <div className="flex-1 text-left min-w-0">
                                 <div className="flex items-center justify-between mb-0.5">
-                                    <h4 className={`font-bold truncate ${selectedUserId === user._id ? "text-gray-900" : "text-gray-700"}`}>
+                                    <h4 className={`font-bold truncate ${selectedUserId === user._id
+                                        ? "text-gray-900"
+                                        : user.unreadCount > 0
+                                            ? "text-primary"
+                                            : "text-gray-700"}`}>
                                         {user.name}
                                     </h4>
-                                    <span className="text-[10px] text-gray-400 flex-shrink-0">May 29</span>
+                                    {user.lastMessage && (
+                                        <span className="text-[10px] text-gray-400 flex-shrink-0">
+                                            {formatRelativeTime(user.lastMessage.createdAt)}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <p className="text-sm text-gray-400 truncate pr-2">
-                                        {user.online ? (
-                                            <span className="text-emerald-500 font-medium">Available for chat</span>
+                                    <p className={`text-sm truncate pr-2 ${user.unreadCount > 0 ? "text-gray-900 font-semibold" : "text-gray-400"}`}>
+                                        {user.lastMessage ? (
+                                            <span className="flex items-center gap-1">
+                                                {user.lastMessage.senderId === currentUserId && <span className="text-primary/70">You:</span>}
+                                                {user.lastMessage.content}
+                                            </span>
                                         ) : (
-                                            `Last seen ${formatRelativeTime(user.lastSeen)}`
+                                            user.online ? (
+                                                <span className="text-emerald-500 font-medium">Available for chat</span>
+                                            ) : (
+                                                `Last seen ${formatRelativeTime(user.lastSeen)}`
+                                            )
                                         )}
                                     </p>
                                     <div className="flex items-center gap-2">
@@ -189,7 +206,11 @@ export default function ThreadList({
                                                 <Pin size={14} className="text-gray-400" />
                                             )}
                                         </button>
-                                        {!user.online && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>}
+                                        {user.unreadCount > 0 && (
+                                            <div className="bg-primary text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 animate-badge-pulse shadow-sm">
+                                                {user.unreadCount}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

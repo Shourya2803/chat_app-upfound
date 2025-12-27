@@ -61,7 +61,8 @@ export const listAllExcept = query({
                 online: u.online && (now - u.lastSeen < 30000),
                 pinnedAt: undefined as number | undefined,
                 chatId: undefined as Id<"chats"> | undefined,
-                unreadCount: 0
+                unreadCount: 0,
+                lastMessage: undefined as any
             }));
         }
 
@@ -79,6 +80,7 @@ export const listAllExcept = query({
             let pinnedAt = undefined;
             let chatId = undefined;
             let unreadCount = 0;
+            let lastMessage: any = undefined;
 
             if (chat) {
                 chatId = chat._id;
@@ -106,12 +108,19 @@ export const listAllExcept = query({
                     .filter((q) =>
                         q.and(
                             q.gt(q.field("createdAt"), lastReadTime),
-                            q.neq(q.field("senderId"), args.currentUserId!)
+                            q.not(q.eq(q.field("senderId"), args.currentUserId!))
                         )
                     )
                     .collect();
 
                 unreadCount = unreadMessages.length;
+
+                // Last Message Logic
+                lastMessage = await ctx.db
+                    .query("messages")
+                    .withIndex("by_chatId", (q) => q.eq("chatId", chat._id))
+                    .order("desc")
+                    .first();
             }
 
             result.push({
@@ -119,15 +128,39 @@ export const listAllExcept = query({
                 online: u.online && (now - u.lastSeen < 30000),
                 pinnedAt,
                 chatId,
-                unreadCount
+                unreadCount,
+                lastMessage: lastMessage ? {
+                    content: lastMessage.content,
+                    createdAt: lastMessage.createdAt,
+                    senderId: lastMessage.senderId
+                } : undefined
             });
         }
 
-        // Sort: Pinned first (by pinnedAt desc), then by name
+        // Sort: 
+        // 1. Pinned first (by pinnedAt desc)
+        // 2. Then by lastMessage.createdAt desc
+        // 3. Then by name
+        // Sort: 
+        // 1. Pinned first (by pinnedAt desc)
+        // 2. Unread chats (priority for new messages)
+        // 3. Recency (lastMessage.createdAt desc)
+        // 4. Alphabetical fallback
         return result.sort((a, b) => {
+            // Pinned
             if (a.pinnedAt && b.pinnedAt) return b.pinnedAt - a.pinnedAt;
             if (a.pinnedAt) return -1;
             if (b.pinnedAt) return 1;
+
+            // Unread (New Messages)
+            if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+            if (b.unreadCount > 0 && a.unreadCount === 0) return 1;
+
+            // Recency
+            const aTime = a.lastMessage?.createdAt || 0;
+            const bTime = b.lastMessage?.createdAt || 0;
+            if (aTime !== bTime) return bTime - aTime;
+
             return a.name.localeCompare(b.name);
         });
     },

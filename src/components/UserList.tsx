@@ -41,7 +41,9 @@ export default function UserList({
                             onClick={() => onSelectUser(user._id)}
                             className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${selectedUserId === user._id
                                 ? "bg-indigo-600/20 border border-indigo-500/50"
-                                : "hover:bg-slate-700/50 border border-transparent"
+                                : user.unreadCount > 0
+                                    ? "bg-slate-700/30 border border-indigo-500/30 ring-1 ring-indigo-500/20"
+                                    : "hover:bg-slate-700/50 border border-transparent"
                                 }`}
                         >
                             <div className="relative">
@@ -53,16 +55,27 @@ export default function UserList({
                                     <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
                                 )}
                             </div>
-                            <div className="flex-1 text-left">
-                                <p className={`font-medium ${selectedUserId === user._id ? "text-indigo-300" : "text-slate-200"}`}>
+                            <div className="flex-1 text-left min-w-0">
+                                <p className={`font-medium ${selectedUserId === user._id
+                                    ? "text-indigo-300"
+                                    : user.unreadCount > 0
+                                        ? "text-white font-bold"
+                                        : "text-slate-200"}`}>
                                     {user.name}
                                 </p>
-                                <p className="text-xs text-slate-500 truncate">
-                                    {user.online ? "Available for chat" : "Last seen recently"}
+                                <p className={`text-xs truncate ${user.unreadCount > 0 ? "text-slate-300 font-medium" : "text-slate-500"}`}>
+                                    {user.lastMessage ? (
+                                        <span className="flex items-center gap-1">
+                                            {user.lastMessage.senderId === currentUserId && <span className="text-indigo-400">You:</span>}
+                                            {user.lastMessage.content}
+                                        </span>
+                                    ) : (
+                                        user.online ? "Available for chat" : "Last seen recently"
+                                    )}
                                 </p>
                             </div>
                             {user.unreadCount > 0 && (
-                                <div className="bg-indigo-500 text-white text-[10px] font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-indigo-500/20">
+                                <div className="ml-auto bg-indigo-500 text-white text-[10px] font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-indigo-500/20 animate-badge-pulse">
                                     {user.unreadCount}
                                 </div>
                             )}

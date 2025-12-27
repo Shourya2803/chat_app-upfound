@@ -4,6 +4,8 @@ import TopHeader from "./TopHeader";
 import ChatCard from "./ChatCard";
 import ThreadList from "./ThreadList";
 import type { Id } from "../../convex/_generated/dataModel";
+import { useAllUsers } from "../hooks/useUsers";
+import { useNotifications } from "../hooks/useNotifications";
 
 export default function ChatLayout({
     currentUser,
@@ -15,6 +17,9 @@ export default function ChatLayout({
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [globalSearch, setGlobalSearch] = useState("");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const { users } = useAllUsers(currentUser.id as Id<"users">);
+    useNotifications(users);
 
     const handleSelectUser = (id: string) => {
         setSelectedUserId(id);
