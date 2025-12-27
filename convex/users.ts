@@ -54,13 +54,53 @@ export const listAllExcept = query({
         const users = await ctx.db.query("users").collect();
         const now = Date.now();
 
-        return users
-            .filter((u) => u._id !== args.currentUserId)
-            .map((u) => ({
+        if (!args.currentUserId) {
+            return users.map(u => ({
                 ...u,
-                // A user is "online" if they have the online flag AND were seen recently
                 online: u.online && (now - u.lastSeen < 30000)
             }));
+        }
+
+        const result = [];
+        for (const u of users) {
+            if (u._id === args.currentUserId) continue;
+
+            // Get chat between current user and this user
+            const sortedParticipants = [args.currentUserId, u._id].sort();
+            const chat = await ctx.db
+                .query("chats")
+                .withIndex("by_participants", (q) => q.eq("participants", sortedParticipants))
+                .unique();
+
+            let pinnedAt = undefined;
+            let chatId = undefined;
+
+            if (chat) {
+                chatId = chat._id;
+                const pin = await ctx.db
+                    .query("pinnedChats")
+                    .withIndex("by_userId_chatId", (q) =>
+                        q.eq("userId", args.currentUserId!).eq("chatId", chat._id)
+                    )
+                    .unique();
+                pinnedAt = pin?.pinnedAt;
+            }
+
+            result.push({
+                ...u,
+                online: u.online && (now - u.lastSeen < 30000),
+                pinnedAt,
+                chatId
+            });
+        }
+
+        // Sort: Pinned first (by pinnedAt desc), then by name
+        return result.sort((a, b) => {
+            if (a.pinnedAt && b.pinnedAt) return b.pinnedAt - a.pinnedAt;
+            if (a.pinnedAt) return -1;
+            if (b.pinnedAt) return 1;
+            return a.name.localeCompare(b.name);
+        });
     },
 });
 

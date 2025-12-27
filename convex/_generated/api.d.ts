@@ -9,8 +9,9 @@
  */
 
 import type * as chats from "../chats.js";
-import type * as crons from "../crons.js";
 import type * as messages from "../messages.js";
+import type * as pins from "../pins.js";
+import type * as s3 from "../s3.js";
 import type * as users from "../users.js";
 
 import type {
@@ -21,8 +22,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   chats: typeof chats;
-  crons: typeof crons;
   messages: typeof messages;
+  pins: typeof pins;
+  s3: typeof s3;
   users: typeof users;
 }>;
 

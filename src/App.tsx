@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import LoginForm from "./components/LoginForm";
 import ChatLayout from "./components/ChatLayout";
+import { Toaster } from "sonner";
 import type { Id } from "../convex/_generated/dataModel";
 
 export default function App() {
@@ -53,6 +54,11 @@ export default function App() {
     return <LoginForm onLogin={handleLogin as any} />;
   }
 
-  return <ChatLayout currentUser={user} onLogout={handleLogout} />;
+  return (
+    <>
+      <Toaster position="top-center" richColors />
+      <ChatLayout currentUser={user} onLogout={handleLogout} />
+    </>
+  );
 }
 

@@ -1,6 +1,9 @@
-import { Search, X } from "lucide-react";
+import { Search, X, Pin, PinOff } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAllUsers } from "../hooks/useUsers";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { toast } from "sonner";
 import type { Id } from "../../convex/_generated/dataModel";
 import { formatRelativeTime } from "../utils/time";
 
@@ -18,6 +21,46 @@ export default function ThreadList({
     const { users } = useAllUsers(currentUserId);
     const [isSearching, setIsSearching] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+
+    const pinMutation = useMutation(api.pins.pinChat);
+    const unpinMutation = useMutation(api.pins.unpinChat);
+    const getOrCreateChat = useMutation(api.chats.getOrCreateChat);
+
+    const handlePin = async (e: React.MouseEvent, otherUserId: Id<"users">, currentChatId?: Id<"chats">) => {
+        e.stopPropagation();
+        try {
+            let chatId = currentChatId;
+            if (!chatId) {
+                // If chatId doesn't exist yet, we must create it to pin it
+                chatId = await getOrCreateChat({ userId1: currentUserId, userId2: otherUserId });
+            }
+            await pinMutation({ userId: currentUserId, chatId });
+            toast.success("Chat pinned to top", {
+                description: "You've successfully pinned this conversation.",
+                icon: <Pin size={16} className="text-emerald-500" />,
+            });
+        } catch (error: any) {
+            const isLimitError = error.message?.includes("up to 3 chats");
+            if (isLimitError) {
+                toast.error("Pin Limit Reached", {
+                    description: "You can only pin up to 3 chats. Please unpin another chat first.",
+                    duration: 4000,
+                });
+            } else {
+                toast.error(error.message || "Failed to pin chat");
+            }
+        }
+    };
+
+    const handleUnpin = async (e: React.MouseEvent, chatId: Id<"chats">) => {
+        e.stopPropagation();
+        try {
+            await unpinMutation({ userId: currentUserId, chatId });
+            toast.success("Chat unpinned");
+        } catch (error: any) {
+            toast.error("Failed to unpin chat");
+        }
+    };
 
     const filteredUsers = useMemo(() => {
         if (!users) return [];
@@ -82,13 +125,20 @@ export default function ThreadList({
                     </p>
                 ) : (
                     filteredUsers.map((user) => (
-                        <button
+                        <div
                             key={user._id}
                             onClick={() => onSelectUser(user._id)}
-                            className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 group ${selectedUserId === user._id
+                            className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 group cursor-pointer ${selectedUserId === user._id
                                 ? "bg-[#FDF6F0] shadow-sm"
                                 : "hover:bg-gray-50"
                                 }`}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    onSelectUser(user._id);
+                                }
+                            }}
                         >
                             <div className="relative flex-shrink-0">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white ${selectedUserId === user._id ? "bg-primary shadow-lg shadow-primary/20" : "bg-gray-300"
@@ -97,6 +147,11 @@ export default function ThreadList({
                                 </div>
                                 {user.online && (
                                     <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                                )}
+                                {(user as any).pinnedAt && (
+                                    <div className="absolute -top-1 -right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
+                                        <Pin size={10} fill="white" />
+                                    </div>
                                 )}
                             </div>
 
@@ -115,10 +170,30 @@ export default function ThreadList({
                                             `Last seen ${formatRelativeTime(user.lastSeen)}`
                                         )}
                                     </p>
-                                    {!user.online && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => {
+                                                const u = user as any;
+                                                if (u.pinnedAt) {
+                                                    handleUnpin(e, u.chatId);
+                                                } else {
+                                                    handlePin(e, user._id, u.chatId);
+                                                }
+                                            }}
+                                            className="p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 rounded"
+                                            title={(user as any).pinnedAt ? "Unpin Chat" : "Pin Chat (Max 3)"}
+                                        >
+                                            {(user as any).pinnedAt ? (
+                                                <PinOff size={14} className="text-gray-400" />
+                                            ) : (
+                                                <Pin size={14} className="text-gray-400" />
+                                            )}
+                                        </button>
+                                        {!user.online && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>}
+                                    </div>
                                 </div>
                             </div>
-                        </button>
+                        </div>
                     ))
                 )}
             </div>
