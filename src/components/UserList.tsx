@@ -61,6 +61,11 @@ export default function UserList({
                                     {user.online ? "Available for chat" : "Last seen recently"}
                                 </p>
                             </div>
+                            {user.unreadCount > 0 && (
+                                <div className="bg-indigo-500 text-white text-[10px] font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-indigo-500/20">
+                                    {user.unreadCount}
+                                </div>
+                            )}
                         </button>
                     ))}
                 </div>

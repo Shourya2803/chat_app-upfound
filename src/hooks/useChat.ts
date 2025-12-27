@@ -11,6 +11,7 @@ export function useChat(currentUserId: Id<"users">, otherUserId: Id<"users">) {
     const setTypingMutation = useMutation(api.messages.setTyping);
     const deleteForMeMutation = useMutation(api.messages.deleteForMe);
     const deleteForEveryoneMutation = useMutation(api.messages.deleteForEveryone);
+    const markAsReadMutation = useMutation(api.messages.markAsRead);
 
     // Load or create chat ID
     useEffect(() => {
@@ -20,6 +21,13 @@ export function useChat(currentUserId: Id<"users">, otherUserId: Id<"users">) {
     // Reactive queries
     const messages = useQuery(api.messages.list, chatId ? { chatId, currentUserId } : "skip");
     const typingIndicators = useQuery(api.messages.getTypingIndicators, chatId ? { chatId } : "skip");
+
+    // Mark as read when active
+    useEffect(() => {
+        if (chatId && currentUserId && messages && messages.length > 0) {
+            markAsReadMutation({ chatId, userId: currentUserId });
+        }
+    }, [chatId, currentUserId, messages, markAsReadMutation]);
 
     // Local timer to refresh typing status since time isn't reactive on server
     const [now, setNow] = useState(Date.now());

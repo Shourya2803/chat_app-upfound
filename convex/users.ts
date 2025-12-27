@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 export const register = mutation({
     args: { name: v.string() },
@@ -57,7 +58,10 @@ export const listAllExcept = query({
         if (!args.currentUserId) {
             return users.map(u => ({
                 ...u,
-                online: u.online && (now - u.lastSeen < 30000)
+                online: u.online && (now - u.lastSeen < 30000),
+                pinnedAt: undefined as number | undefined,
+                chatId: undefined as Id<"chats"> | undefined,
+                unreadCount: 0
             }));
         }
 
@@ -74,6 +78,7 @@ export const listAllExcept = query({
 
             let pinnedAt = undefined;
             let chatId = undefined;
+            let unreadCount = 0;
 
             if (chat) {
                 chatId = chat._id;
@@ -84,13 +89,37 @@ export const listAllExcept = query({
                     )
                     .unique();
                 pinnedAt = pin?.pinnedAt;
+
+                // Unread Count Logic
+                const receipt = await ctx.db
+                    .query("readReceipts")
+                    .withIndex("by_userId_chatId", (q) =>
+                        q.eq("userId", args.currentUserId!).eq("chatId", chat._id)
+                    )
+                    .unique();
+
+                const lastReadTime = receipt?.lastReadTime || 0;
+
+                const unreadMessages = await ctx.db
+                    .query("messages")
+                    .withIndex("by_chatId", (q) => q.eq("chatId", chat._id))
+                    .filter((q) =>
+                        q.and(
+                            q.gt(q.field("createdAt"), lastReadTime),
+                            q.neq(q.field("senderId"), args.currentUserId!)
+                        )
+                    )
+                    .collect();
+
+                unreadCount = unreadMessages.length;
             }
 
             result.push({
                 ...u,
                 online: u.online && (now - u.lastSeen < 30000),
                 pinnedAt,
-                chatId
+                chatId,
+                unreadCount
             });
         }
 

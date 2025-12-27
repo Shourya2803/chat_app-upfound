@@ -175,3 +175,25 @@ export const search = query({
 });
 
 
+
+export const markAsRead = mutation({
+    args: { chatId: v.id("chats"), userId: v.id("users") },
+    handler: async (ctx, args) => {
+        const existing = await ctx.db
+            .query("readReceipts")
+            .withIndex("by_userId_chatId", (q) =>
+                q.eq("userId", args.userId).eq("chatId", args.chatId)
+            )
+            .unique();
+
+        if (existing) {
+            await ctx.db.patch(existing._id, { lastReadTime: Date.now() });
+        } else {
+            await ctx.db.insert("readReceipts", {
+                userId: args.userId,
+                chatId: args.chatId,
+                lastReadTime: Date.now(),
+            });
+        }
+    },
+});

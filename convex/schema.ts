@@ -48,4 +48,10 @@ export default defineSchema({
     userId: v.id("users"),
     expiresAt: v.number(),
   }).index("by_chatId", ["chatId"]),
+
+  readReceipts: defineTable({
+    userId: v.id("users"),
+    chatId: v.id("chats"),
+    lastReadTime: v.number(),
+  }).index("by_userId_chatId", ["userId", "chatId"]),
 });
